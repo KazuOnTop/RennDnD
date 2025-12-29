@@ -1,70 +1,175 @@
 --====================================
 -- Script Name : RENNDND
--- Game        : Violence District
 -- Type        : LocalScript
 --====================================
 
--- Services
+-- SERVICES
 local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
 local player = Players.LocalPlayer
 
--- ====== UI ======
-local ScreenGui = Instance.new("ScreenGui")
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 ScreenGui.Name = "RENNDND_GUI"
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 260, 0, 140)
-Frame.Position = UDim2.new(0.02, 0, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Frame.BorderSizePixel = 0
-Frame.Parent = ScreenGui
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 260, 0, 200)
+Main.Position = UDim2.new(0.05, 0, 0.35, 0)
+Main.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = false
 
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
-Corner.Parent = Frame
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,12)
 
-local Title = Instance.new("TextLabel")
+-- TITLE (DRAG AREA)
+local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundTransparency = 1
+Title.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Title.Text = "RENNDND"
-Title.TextColor3 = Color3.fromRGB(255, 50, 50)
+Title.TextColor3 = Color3.fromRGB(255,60,60)
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 26
-Title.Parent = Frame
+Title.TextSize = 22
+Instance.new("UICorner", Title)
 
-local Button = Instance.new("TextButton")
-Button.Size = UDim2.new(0.9, 0, 0, 40)
-Button.Position = UDim2.new(0.05, 0, 0.55, 0)
-Button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-Button.Text = "BOOST BRIGHTNESS"
-Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-Button.Font = Enum.Font.Gotham
-Button.TextSize = 16
-Button.Parent = Frame
+-- TOGGLE BUTTON
+local Toggle = Instance.new("TextButton", Main)
+Toggle.Size = UDim2.new(0, 30, 0, 30)
+Toggle.Position = UDim2.new(1, -35, 0, 5)
+Toggle.Text = "-"
+Toggle.Font = Enum.Font.GothamBold
+Toggle.TextSize = 20
+Toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+Toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", Toggle)
 
-local BtnCorner = Instance.new("UICorner")
-BtnCorner.CornerRadius = UDim.new(0, 8)
-BtnCorner.Parent = Button
+-- CONTENT FRAME
+local Content = Instance.new("Frame", Main)
+Content.Position = UDim2.new(0, 0, 0, 45)
+Content.Size = UDim2.new(1, 0, 1, -45)
+Content.BackgroundTransparency = 1
 
--- ====== FUNCTION ======
-local boosted = false
+-- BUTTON CREATOR
+local function makeButton(text, y)
+	local b = Instance.new("TextButton", Content)
+	b.Size = UDim2.new(0.9, 0, 0, 35)
+	b.Position = UDim2.new(0.05, 0, 0, y)
+	b.Text = text
+	b.Font = Enum.Font.Gotham
+	b.TextSize = 14
+	b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	b.TextColor3 = Color3.new(1,1,1)
+	Instance.new("UICorner", b)
+	return b
+end
 
-Button.MouseButton1Click:Connect(function()
-	boosted = not boosted
-	
-	if boosted then
-		Lighting.Brightness = 4
-		Lighting.GlobalShadows = false
-		Lighting.ClockTime = 14
-		Button.Text = "NORMAL MODE"
-	else
-		Lighting.Brightness = 2
-		Lighting.GlobalShadows = true
-		Lighting.ClockTime = 12
-		Button.Text = "BOOST BRIGHTNESS"
+local BrightBtn = makeButton("Brightness ON", 0)
+local ESPPlayerBtn = makeButton("ESP Player OFF", 45)
+local ESPKillerBtn = makeButton("ESP Killer OFF", 90)
+
+-- DRAG SYSTEM
+local dragging, dragStart, startPos
+Title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = Main.Position
 	end
 end)
 
-print("RENNDND Script Loaded Successfully")
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		Main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+-- TOGGLE OPEN/CLOSE
+local opened = true
+Toggle.MouseButton1Click:Connect(function()
+	opened = not opened
+	Content.Visible = opened
+	Toggle.Text = opened and "-" or "+"
+end)
+
+-- BRIGHTNESS
+local bright = false
+BrightBtn.MouseButton1Click:Connect(function()
+	bright = not bright
+	if bright then
+		Lighting.Brightness = 4
+		Lighting.GlobalShadows = false
+		BrightBtn.Text = "Brightness OFF"
+	else
+		Lighting.Brightness = 2
+		Lighting.GlobalShadows = true
+		BrightBtn.Text = "Brightness ON"
+	end
+end)
+
+-- ESP SYSTEM
+local espPlayers = false
+local espKillers = false
+local highlights = {}
+
+local function clearESP()
+	for _, h in pairs(highlights) do
+		if h then h:Destroy() end
+	end
+	highlights = {}
+end
+
+local function addESP(plr, color)
+	if plr.Character and not highlights[plr] then
+		local h = Instance.new("Highlight", plr.Character)
+		h.FillColor = color
+		h.OutlineColor = color
+		h.FillTransparency = 0.5
+		highlights[plr] = h
+	end
+end
+
+RunService.RenderStepped:Connect(function()
+	clearESP()
+	for _, plr in pairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character then
+			if espPlayers then
+				addESP(plr, Color3.fromRGB(0,255,0))
+			end
+			if espKillers then
+				for _, tool in pairs(plr.Character:GetChildren()) do
+					if tool:IsA("Tool") then
+						addESP(plr, Color3.fromRGB(255,0,0))
+					end
+				end
+			end
+		end
+	end
+end)
+
+ESPPlayerBtn.MouseButton1Click:Connect(function()
+	espPlayers = not espPlayers
+	ESPPlayerBtn.Text = espPlayers and "ESP Player ON" or "ESP Player OFF"
+end)
+
+ESPKillerBtn.MouseButton1Click:Connect(function()
+	espKillers = not espKillers
+	ESPKillerBtn.Text = espKillers and "ESP Killer ON" or "ESP Killer OFF"
+end)
+
+print("RENNDND Loaded")
